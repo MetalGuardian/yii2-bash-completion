@@ -1,7 +1,17 @@
 #
-#  Completion for yii2 console commands:
+#  Completion for yii2 console commands
 #
-_yii2_autocomplete() 
+#  To use these routines:
+#
+#    1) Copy this file to somewhere (e.g. ~/yii2-completion.bash).
+#    2) Add the following line to your .bashrc:
+#        source ~/yii2-completion.bash
+#
+#    or you can put this file in /etc/bash_completion.d/
+#
+#    or simply type `. yii2-completion.bash` for one time using
+#
+_yii2_completion()
 {
     local cur prev opts curpath commands list options params last c=0 command="someRandomString"
     COMPREPLY=()
@@ -36,4 +46,4 @@ _yii2_autocomplete()
     return 0
 }
 
-complete -o nospace -F _yii2_autocomplete ./yii
+complete -o nospace -F __yii2_completion ./yii
