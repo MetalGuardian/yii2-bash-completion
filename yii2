@@ -3,45 +3,6 @@
 #
 _yii2_autocomplete() 
 {
-    local cword=10 words=$COMP_WORDS
-    local i c=1 command
-    local cur="${COMP_WORDS[COMP_CWORD]}"
-
-    while [ $c -lt $cword ]; do
-        i="${words[c]}"
-        case "$i" in
-        -c|--work-tree|--namespace) ((c++)) ;;
-        -*) ;;
-        *) command="$i"; break ;;
-        esac
-        ((c++))
-    done
-
-    if [ -z "$command" ]; then
-        case "$cur" in
-        --*)   __comtest "
-            --paginate
-            --no-pager
-            --git-dir=
-            --bare
-            --version
-            --exec-path
-            --exec-path=
-            --html-path
-            --man-path
-            --info-path
-            --work-tree=
-            --namespace=
-            --no-replace-objects
-            --help
-            "
-            ;;
-        esac
-        return
-    fi
-
-    return 0
-
     local cur prev opts curpath commands list subcom
     COMPREPLY=()
     curpath=$(pwd)
@@ -54,26 +15,14 @@ _yii2_autocomplete()
     opts=$commands
     list=($commands)
 
-    __comtest "
-            --paginate
-            --no-pager
-            --git-dir=
-            --bare
-            --version
-            --exec-path
-            --exec-path=
-            --html-path
-            --man-path
-            --info-path
-            --work-tree=
-            --namespace=
-            --no-replace-objects
-            --help
-            "
-    return 0
+    # Handle --xxxxxx=
+    if [[ ${prev} == "--"* && ${cur} == "=" ]] ; then
+        COMPREPLY=(*)
+        return 0
+    fi
 
     if [[ ${list[*]} =~ $prev ]]; then
-        subcom=$( ./yii help/index $prev | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1"="}' )
+        subcom=$( ./yii help/index $prev | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1}' )
         COMPREPLY=( $(compgen -W "${subcom}" -- ${cur}) )
         return 0
     fi
@@ -83,29 +32,13 @@ _yii2_autocomplete()
         return 0
     fi
 
+    # Handle other options
+    if [[ ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} != "--"*"=" ]] ; then
+        # If there's only one option, without =, then allow a space
+        compopt +o nospace
+    fi
+
     return 0
 }
-complete -F _yii2_autocomplete ./yii
 
-__comtest ()
-{
-    local cur_="${3-$cur}"
-
-    case "$cur_" in
-    --*=)
-        ;;
-    *)
-        local c i=0 IFS=$' \t\n'
-        for c in $1; do
-            c="$c${4-}"
-            if [[ $c == "$cur_"* ]]; then
-                case $c in
-                --*=*|*.) ;;
-                *) c="$c " ;;
-                esac
-                COMPREPLY[i++]="${2-}$c"
-            fi
-        done
-        ;;
-    esac
-}
+complete -o nospace -F _yii2_autocomplete ./yii
