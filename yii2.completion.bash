@@ -46,4 +46,4 @@ _yii2_completion()
     return 0
 }
 
-complete -o nospace -F __yii2_completion ./yii
+complete -o nospace -F _yii2_completion ./yii
