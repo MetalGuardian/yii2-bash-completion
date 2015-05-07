@@ -30,10 +30,12 @@ _yii2_completion()
     done
 
     if [[ ${list[*]} =~ "$command" ]]; then
+        if [[ ${cur} == -* ]]; then
+            options=$( ./yii help/index $command | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1"="}' )
+            COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+        fi
         # params was sorted in alphabet order and do not understand what have to be the next
         #params=$( ./yii help/index $prev | egrep "^- " | awk '{print $2}' | awk -F ":" '{print $1}' )
-        options=$( ./yii help/index $command | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1"="}' )
-        COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
         return 0
     fi
 
