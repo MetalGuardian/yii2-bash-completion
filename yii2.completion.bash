@@ -13,7 +13,7 @@
 #
 _yii2_completion()
 {
-    local cur prev curpath controllers commands controller action command options params res res2 array
+    local cur prev curpath controllers commands controller action command options params res res2 array paramCount
     COMPREPLY=()
     curpath=$(pwd)
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -22,46 +22,47 @@ _yii2_completion()
     action=$(echo "${COMP_WORDS[1]}" | awk -F "/" '{ print $2 }')
     command="$controller/$action"
 
-    # TODO: fix if
-    if [[ ${action} == "" ]]; then
-        controllers=$( ./yii help/index | egrep "^- " | awk '{ print $2 }' )
-        res=$(__check_in_array ${cur} "${controllers[@]}")
-        res2=$(__check_in_array ${controller} "${controllers[@]}")
-        if [[ ${res} == 0 && ${res2} == 0 ]]; then
-            COMPREPLY=( $(compgen -W "${controllers}" -- ${cur}) )
-            return 0
-        fi
-    fi
-
     if [[ ${COMP_CWORD} == 1 ]]; then
+        if [[ ${action} == "" ]]; then
+            controllers=$( ./yii help/index | egrep "^- " | awk '{ print $2 }' )
+            res=$(__check_in_array ${cur} "${controllers[@]}")
+            res2=$(__check_in_array ${controller} "${controllers[@]}")
+            if [[ ${res} == 0 && ${res2} == 0 ]]; then
+                compopt -o nospace
+                COMPREPLY=( $(compgen -W "${controllers}" -S "/" -- ${cur}) )
+                return 0
+            fi
+        fi
+
         compopt +o nospace
         commands=$( ./yii help/index | egrep "^    " | awk '{ print $1 }' )
         COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
         return 0
     fi
 
-    if [[ ${prev} == "./yii" ]]; then
-        controllers=$( ./yii help/index | egrep "^- " | awk '{ print $2 }' )
-        COMPREPLY=( $(compgen -W "${controllers}" -- ${cur}) )
-        return 0
+    if [[ ${action} == "" ]]; then
+        action=$(./yii help/index ${command} | egrep "^- \w*/\w* \(default\)" | awk '{ print $2 }' | awk -F "/" '{ print $2 }')
+        command="$controller/$action"
     fi
 
-    if [[ ${cur} == -* ]]; then
-        options=$( ./yii help/index ${command} | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1"="}' )
-        compopt -o nospace
-        COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
-        return 0
-    fi
-
-    # TODO: auto definition of the default action
-    if [[ ${action} != "" && ${cur} == "" ]]; then
-        # params was sorted in alphabetical order and do not understand what have to be the next
-        params=$( ./yii help/index ${command} | egrep "^- " | awk '{print $2}' | awk -F ":" '{print NR"-"$1}' )
-        array=(${params})
-        paramCount=${#array[@]}
-        if [[ ${paramCount} > 0 ]]; then
-            COMPREPLY=( $(compgen -W "0-argumens: ${params}" -- ${cur}) )
+    if [[ ${action} != "" ]]; then
+        if [[ ${cur} == -* ]]; then
+            options=$( ./yii help/index ${command} | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1}' )
+            compopt -o nospace
+            COMPREPLY=( $(compgen -W "${options}" -S "=" -- ${cur}) )
             return 0
+        fi
+
+        if [[ ${cur} == "" ]]; then
+            # params was sorted in alphabetical order and do not understand what have to be the next
+            # so it show parameter names with prefix order
+            params=$( ./yii help/index ${command} | egrep "^- " | awk '{print $2}' | awk -F ":" '{print NR"-"$1}' )
+            array=(${params})
+            paramCount=${#array[@]}
+            if [[ ${paramCount} > 0 ]]; then
+                COMPREPLY=( $(compgen -W "0-arguments: ${params}" -- ${cur}) )
+                return 0
+            fi
         fi
     fi
 
@@ -82,6 +83,5 @@ __check_in_array() {
     echo 0
     return
 }
-complete -o nospace -F _yii2_completion ./yii
-# 2>/dev/null
-# -o bashdefault -o default
+
+complete -o nospace -F _yii2_completion ./yii 2>/dev/null

@@ -19,9 +19,12 @@ or simply type `. yii2-completion.bash` for one time using
 ### Features
 
 1. It can complete all commands defined in app, for example, `migrate/create` or `asset/compress` 
-2. It can complete all options options of the commands, for example, `--migrationPath` or `--interactive`
+2. It can complete all options of the commands, for example, `--migrationPath` or `--interactive`
+3. It shows command params, for example, `name` for `migrate/create` or `configFile` `bundleFile` for `asset/compress`.
+It only shows this params with prefix order, you need type params by yourself
 
 ### Todo list
 
-1. Add completion of the command params, for example, `name` for `migrate/create` or `configFile` `bundleFile` for `asset/compress`
+1. Hide already typed command params
 2. Add completion of the specific commands, for example, list of migrations for `migrate/mark` or path for `--migrationPath`
+
