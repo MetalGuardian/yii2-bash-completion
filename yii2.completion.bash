@@ -13,7 +13,7 @@
 #
 _yii2_completion()
 {
-    local cur prev curpath controllers commands controller action command options params res res2 array paramCount
+    local cur prev curpath controllers commands controller action command options params res res2 array
     COMPREPLY=()
     curpath=$(pwd)
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -24,7 +24,7 @@ _yii2_completion()
 
     if [[ ${COMP_CWORD} == 1 ]]; then
         if [[ ${action} == "" ]]; then
-            controllers=$( ./yii help/index | egrep "^- " | awk '{ print $2 }' )
+            controllers=$( __yii2_get_controllers )
             res=$(__check_in_array ${cur} "${controllers[@]}")
             res2=$(__check_in_array ${controller} "${controllers[@]}")
             if [[ ${res} == 0 && ${res2} == 0 ]]; then
@@ -35,19 +35,19 @@ _yii2_completion()
         fi
 
         compopt +o nospace
-        commands=$( ./yii help/index | egrep "^    " | awk '{ print $1 }' )
+        commands=$( __yii2_get_full_controllers )
         COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
         return 0
     fi
 
     if [[ ${action} == "" ]]; then
-        action=$(./yii help/index ${command} | egrep "^- \w*/\w* \(default\)" | awk '{ print $2 }' | awk -F "/" '{ print $2 }')
+        action=$( __yii2_get_controller_default_action ${controller} )
         command="$controller/$action"
     fi
 
     if [[ ${action} != "" ]]; then
         if [[ ${cur} == -* ]]; then
-            options=$( ./yii help/index ${command} | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1}' )
+            options=$( __yii2_get_command_options ${command} )
             compopt -o nospace
             COMPREPLY=( $(compgen -W "${options}" -S "=" -- ${cur}) )
             return 0
@@ -56,10 +56,9 @@ _yii2_completion()
         if [[ ${cur} == "" ]]; then
             # params was sorted in alphabetical order and do not understand what have to be the next
             # so it show parameter names with prefix order
-            params=$( ./yii help/index ${command} | egrep "^- " | awk '{print $2}' | awk -F ":" '{print NR"-"$1}' )
+            params=$( __yii2_get_command_params ${command} )
             array=(${params})
-            paramCount=${#array[@]}
-            if [[ ${paramCount} > 0 ]]; then
+            if [[ ${#array[@]} > 0 ]]; then
                 COMPREPLY=( $(compgen -W "0-arguments: ${params}" -- ${cur}) )
                 return 0
             fi
@@ -67,6 +66,29 @@ _yii2_completion()
     fi
 
     return 0
+}
+
+__yii2_get_controllers() {
+    ./yii help/index | egrep "^- " | awk '{ print $2 }'
+}
+
+__yii2_get_full_controllers() {
+    ./yii help/index | egrep "^    " | awk '{ print $1 }'
+}
+
+__yii2_get_controller_default_action() {
+    local controller=$1
+    ./yii help/index | egrep "^    ${controller}/\w* \(default\)" | awk '{ print $1 }' | awk -F "/" '{ print $2 }'
+}
+
+__yii2_get_command_options() {
+    local command=$1
+    ./yii help/index ${command} | egrep "^--" | awk -F ":" '{print $1}' | awk '{print $1}'
+}
+
+__yii2_get_command_params() {
+    local command=$1
+    ./yii help/index ${command} | egrep "^- " | awk '{print $2}' | awk -F ":" '{print NR"-"$1}'
 }
 
 __check_in_array() {
@@ -84,4 +106,4 @@ __check_in_array() {
     return
 }
 
-complete -o nospace -F _yii2_completion ./yii 2>/dev/null
+complete -F _yii2_completion ./yii 2>/dev/null
