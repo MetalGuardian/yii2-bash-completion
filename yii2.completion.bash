@@ -88,6 +88,9 @@ __yii2_get_command_options() {
 
 __yii2_get_command_params() {
     local command=$1
+    if [[ ${command} != *"/"* ]]; then
+        return 0
+    fi
     ./yii help/index ${command} | egrep "^- " | awk '{print $2}' | awk -F ":" '{print NR"-"$1}'
 }
 
